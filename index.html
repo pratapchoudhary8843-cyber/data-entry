@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Data Entry">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Smart Data Entry</title>
+<style>
+:root{--bg:#000;--card:rgba(10,14,28,.78);--text:#e6ebf3;--muted:#93a0b5;--line:rgba(120,150,220,.25);--accent:#2fb8ff;--danger:#ff6b81;--ok:#3be08f;--head:rgba(30,60,110,.95);--zebra:rgba(255,255,255,.04)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:var(--text);background:#000;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+header,main,#status{position:relative;z-index:1}
+input,select{color-scheme:dark}
+header{backdrop-filter:blur(10px);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 24px;background:color-mix(in srgb,var(--card) 82%,transparent);border-bottom:1px solid var(--line)}
+.brand{font-weight:700;font-size:18px}
+.tabs{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button,.btn{font:inherit;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);cursor:pointer;text-decoration:none;display:inline-block}
+button:hover,.btn:hover{border-color:var(--accent)}
+.tab.active,.primary{background:var(--accent);border-color:var(--accent);color:#001018}
+.small{padding:4px 10px;font-size:13px}
+#modeBtn{border-radius:999px;font-size:13px;margin-right:6px}
+main{max-width:1150px;margin:22px auto;padding:0 16px}
+.panel{display:none}.panel.active{display:block}
+.card{backdrop-filter:blur(6px);box-shadow:0 0 28px rgba(47,184,255,.12);background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.drop{background:var(--card);display:block;text-align:center;border:2px dashed var(--line);border-radius:14px;padding:40px 16px;color:var(--muted);cursor:pointer}
+.drop:hover,.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.drop strong{color:var(--text);font-size:17px}
+.wrap{overflow:auto;max-height:55vh;border:1px solid var(--line);border-radius:10px;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;text-align:left}
+thead th{background:var(--head);color:#fff;position:sticky;top:0;z-index:1}
+tbody tr:nth-child(even){background:var(--zebra)}
+.edit td,.edit th{padding:0}
+.edit input{width:100%;min-width:110px;border:0;background:transparent;color:inherit;font:inherit;padding:8px 12px;outline:none}
+.edit input:focus{box-shadow:inset 0 0 0 2px var(--accent);background:rgba(47,184,255,.12)}
+.edit th input{font-weight:700}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.gap{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted);font-size:13px}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--danger);font-weight:600}.warn{color:#ffc857;font-weight:600}
+.danger{color:var(--danger)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes s{to{transform:rotate(360deg)}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;backdrop-filter:blur(6px)}
+.stat b{display:block;font-size:24px;color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}
+.chip{border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;background:rgba(47,184,255,.08)}
+.chip i{font-style:normal;color:var(--muted);margin-right:4px}
+.thumb{max-width:150px;max-height:110px;border-radius:8px;border:1px solid var(--line);margin-right:12px;cursor:zoom-in}
+.ficon{font-size:34px;margin-right:12px}
+input[type=search]{font:inherit;padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);min-width:240px}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:50;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox img{max-width:94vw;max-height:94vh;border-radius:8px}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#12202e;border:1px solid var(--accent);padding:10px 18px;border-radius:10px;z-index:60;display:none}
+#status{background:#d1344b;color:#fff;padding:12px 24px;text-align:center}
+header{padding-top:max(14px,env(safe-area-inset-top))}
+main{padding-bottom:max(16px,env(safe-area-inset-bottom))}
+#installBtn{display:none;border-radius:999px;font-size:13px;background:var(--accent);border-color:var(--accent);color:#001018;margin-right:6px}
+#iosHint{display:none;background:#12304d;color:#fff;padding:10px 16px;text-align:center;font-size:14px;position:relative;z-index:1}
+#iosHint button{margin-left:10px;padding:2px 10px}
+@media (max-width:640px){
+  body{font-size:14.5px}
+  header{padding-left:14px;padding-right:14px}
+  .brand{font-size:16px}
+  main{margin-top:14px;padding-left:10px;padding-right:10px}
+  .card{padding:14px}
+  .drop{padding:30px 12px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stat b{font-size:20px}
+  input[type=search]{min-width:0;width:100%}
+  #dl{width:100%}
+  .row{align-items:flex-start}
+  button,.btn{padding:10px 14px}
+  .small{padding:8px 12px}
+  .thumb{max-width:110px}
+}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<header>
+  <div class="brand">📁 → 📊 Smart Data Entry</div>
+  <div class="tabs">
+    <button id="installBtn">📲 Install app</button>
+    <button id="modeBtn" title="Click to switch mode">Detecting…</button>
+    <button class="tab active" data-tab="up">Upload files</button>
+    <button class="tab" data-tab="data">Stored data</button>
+  </div>
+</header>
+<div id="status" hidden></div>
+<div id="iosHint">To install on iPhone: tap the Share button, then “Add to Home Screen”. <button id="iosClose">OK</button></div>
+<main>
+  <section id="up" class="panel active">
+    <label id="drop" class="drop">
+      <input id="file" type="file" multiple hidden>
+      <strong>Click, drag &amp; drop, or paste ANY file(s)</strong><br>
+      Photos · PDF · Word · Excel · CSV · text · JSON · anything else — read automatically and stored, each file on its own sheet.
+    </label>
+    <div class="gap" style="margin-top:10px">
+      <button id="camBtn">📷 Take photo with camera</button>
+      <input id="cam" type="file" accept="image/*" capture="environment" hidden>
+      <span class="muted">Duplicate files are detected automatically.</span>
+    </div>
+    <div id="results" style="margin-top:16px"></div>
+  </section>
+
+  <section id="data" class="panel">
+    <div id="stats" class="stats"></div>
+    <div class="card">
+      <div class="row">
+        <div class="gap">
+          <input id="q" type="search" placeholder="🔎 Search stored files…">
+        </div>
+        <button id="dl" class="primary">⬇ Download Excel (all sheets)</button>
+      </div>
+      <div id="list" class="wrap"></div>
+    </div>
+    <div id="view"></div>
+  </section>
+</main>
+<div id="lightbox"><img alt=""></div>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const enc=encodeURIComponent;
+const prefs={
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+function el(tag,props={},...kids){
+  const e=document.createElement(tag);
+  for(const [k,v] of Object.entries(props)){
+    if(k==='class')e.className=v; else if(k==='style')e.style.cssText=v;
+    else if(k.startsWith('on'))e[k]=v; else e.setAttribute(k,v);
+  }
+  e.append(...kids.flat().filter(x=>x!=null)); return e;
+}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)}
+function saveBlob(blob,name){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+const ICONS={image:'🖼',pdf:'📕',word:'📝',excel:'📊',csv:'📋',json:'🧾',text:'📄',file:'🗂'};
+const IMG_EXT=['jpg','jpeg','png','webp','bmp','gif','tif','tiff'];
+function kindOf(name){
+  const e=(name.split('.').pop()||'').toLowerCase();
+  if(IMG_EXT.includes(e))return'image';
+  if(e==='pdf')return'pdf'; if(e==='docx')return'word'; if(['xlsx','xlsm'].includes(e))return'excel';
+  if(['csv','tsv'].includes(e))return'csv'; if(e==='json')return'json'; if(['txt','md','log','text'].includes(e))return'text';
+  return'file';
+}
+
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+function median(a){const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function pad(rows){const w=Math.max(1,...rows.map(r=>r.length));return rows.map(r=>[...r,...Array(w-r.length).fill('')])}
+function sv(v){return v==null?'':(typeof v==='object'?JSON.stringify(v):String(v))}
+const two=n=>String(n).padStart(2,'0');
+function nowStr(){const d=new Date();return `${d.getFullYear()}-${two(d.getMonth()+1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`}
+
+function buildGrid(words){
+  if(!words.length) return [];
+  const medH=median(words.map(w=>w.h))||20;
+  words=[...words].sort((a,b)=>(a.y+a.h/2)-(b.y+b.h/2));
+  const lines=[]; let cur=[], curY=null;
+  for(const w of words){
+    const yc=w.y+w.h/2;
+    if(cur.length&&Math.abs(yc-curY)>medH*0.6){lines.push(cur);cur=[]}
+    cur.push(w);
+    curY=mean(cur.map(x=>x.y+x.h/2));
+  }
+  lines.push(cur);
+  const rows=[];
+  for(const ws of lines){
+    ws.sort((a,b)=>a.x-b.x);
+    const cells=[]; let c=[ws[0]];
+    for(let i=1;i<ws.length;i++){
+      const a=ws[i-1],b=ws[i];
+      if(b.x-(a.x+a.w)>medH*1.2){cells.push(c);c=[b]}else c.push(b);
+    }
+    cells.push(c);
+    rows.push(cells.map(c=>({text:c.map(x=>x.text).join(' '),x:c[0].x})));
+  }
+  const xs=rows.flat().map(c=>c.x).sort((a,b)=>a-b);
+  const tol=medH*2.5, centers=[]; let grp=[xs[0]];
+  for(let i=1;i<xs.length;i++){
+    if(xs[i]-xs[i-1]>tol){centers.push(mean(grp));grp=[xs[i]]}else grp.push(xs[i]);
+  }
+  centers.push(mean(grp));
+  const grid=rows.map(r=>{
+    const row=Array(centers.length).fill('');
+    for(const c of r){
+      let k=0,best=Infinity;
+      centers.forEach((cx,i)=>{const d=Math.abs(cx-c.x);if(d<best){best=d;k=i}});
+      row[k]=(row[k]+' '+c.text).trim();
+    }
+    return row;
+  });
+  const keep=centers.map((_,j)=>j).filter(j=>grid.some(r=>r[j]));
+  return grid.map(r=>keep.map(j=>r[j]));
+}
+function textToGrid(text){
+  const words=[];
+  text.split(/\r?\n/).forEach((line,i)=>{
+    line=line.replace(/\t/g,'    ');
+    for(const m of line.matchAll(/\S+(?: \S+)*/g)) words.push({text:m[0],x:m.index*13,w:m[0].length*13,y:i*30,h:20});
+  });
+  return buildGrid(words);
+}
+
+function mkDate(y,m,d){const dt=new Date(y,m-1,d);return dt.getMonth()===m-1&&dt.getDate()===d?dt:null}
+function smartCast(v){
+  const s=String(v==null?'':v).trim();
+  if(!s) return null;
+  if((/^[-+]?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)||/^[-+]?\d+(\.\d+)?$/.test(s))&&!/^0\d+$/.test(s)) return parseFloat(s.replace(/,/g,''));
+  let m;
+  if((m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return mkDate(+m[1],+m[2],+m[3])||s;
+  if((m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/))){
+    let d=+m[1],mo=+m[2]; if(mo>12&&d<=12)[d,mo]=[mo,d];
+    return mkDate(+m[3],mo,d)||s;
+  }
+  return s;
+}
+const isNum=v=>typeof v==='number'||v instanceof Date;
+function headerGuess(grid){
+  if(grid.length<3||!grid[0].every(c=>String(c).trim())) return false;
+  if(grid[0].some(c=>isNum(smartCast(c)))) return false;
+  for(let j=0;j<grid[0].length;j++){
+    const col=grid.slice(1).map(r=>r[j]).filter(c=>c!=null&&String(c).trim()).map(smartCast);
+    if(col.length>=2&&col.every(isNum)) return true;
+  }
+  return false;
+}
+function splitHeader(grid,force){
+  const g=pad(grid), width=g[0].length;
+  if(force||headerGuess(g)) return {headers:g[0],body:g.slice(1),width};
+  return {headers:Array.from({length:width},(_,i)=>'Column '+(i+1)),body:g,width};
+}
+function detectFields(headers,rows){
+  const cells=[headers,...rows].flat().filter(c=>c!==''&&c!=null).map(String);
+  const blob=cells.join('\n');
+  const uniq=a=>[...new Set(a)].sort();
+  const emails=uniq(blob.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g)||[]).slice(0,8);
+  const phones=uniq((blob.match(/(?<!\d)\+?\d[\d\s-]{8,14}\d(?!\d)/g)||[]).filter(p=>{const n=p.replace(/\D/g,'').length;return n>=10&&n<=13}).map(p=>p.trim())).slice(0,8);
+  const dates=uniq(blob.match(/\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b|\b\d{4}-\d{2}-\d{2}\b/g)||[]).slice(0,8);
+  const nums=rows.flat().map(smartCast).filter(v=>typeof v==='number');
+  const low=blob.toLowerCase();
+  let type;
+  if(['invoice','bill','receipt','gst','tax','amount due','total'].some(k=>low.includes(k))) type='Invoice / receipt';
+  else if(headers.length>=3&&nums.length) type='Data table';
+  else if(headers.length<=2) type='Form / key-value / text';
+  else type='Document';
+  const out={type,emails,phones,dates};
+  if(nums.length) out.numbers={count:nums.length,sum:Math.round(nums.reduce((s,x)=>s+x,0)*100)/100,min:Math.min(...nums),max:Math.max(...nums)};
+  return out;
+}
+
+function decodeText(buf){
+  const u=new Uint8Array(buf);
+  if((u[0]===0xFF&&u[1]===0xFE)) return new TextDecoder('utf-16le').decode(u);
+  if((u[0]===0xFE&&u[1]===0xFF)) return new TextDecoder('utf-16be').decode(u);
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(u)}catch(e){return new TextDecoder('windows-1252').decode(u)}
+}
+function csvGrid(text){
+  const first=text.split(/\r?\n/).find(l=>l.trim())||'';
+  const delim=[',',';','\t','|'].map(d=>[d,first.split(d).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  const rows=[]; let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++} else q=false } else cur+=c }
+    else if(c==='"') q=true;
+    else if(c===delim){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n')i++; row.push(cur);cur='';rows.push(row);row=[] }
+    else cur+=c;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row)}
+  return pad(rows.filter(r=>r.some(c=>c.trim())).slice(0,20000));
+}
+function jsonGrid(text){
+  const data=JSON.parse(text);
+  if(Array.isArray(data)&&data.length&&data.every(x=>x&&typeof x==='object'&&!Array.isArray(x))){
+    const keys=[...new Set(data.flatMap(Object.keys))];
+    return [[keys,...data.map(x=>keys.map(k=>sv(x[k])))],true];
+  }
+  if(data&&typeof data==='object'&&!Array.isArray(data))
+    return [[['Key','Value'],...Object.entries(data).map(([k,v])=>[k,sv(v)])],true];
+  return [textToGrid(JSON.stringify(data,null,2)),false];
+}
+function infoGrid(file,note){
+  const ext=(file.name.split('.').pop()||'unknown').toLowerCase();
+  return [['Property','Value'],['File name',file.name],['File type',ext],['Size (KB)',String(Math.round(file.size/102.4)/10)],['Note',note]];
+}
+
+const LIBS={
+  tesseract:{urls:['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js'],ok:()=>window.Tesseract},
+  xlsx:{urls:['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],ok:()=>window.XLSX},
+  jszip:{urls:['https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'],ok:()=>window.JSZip},
+  pdfjs:{urls:['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'],
+    workers:['https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'],ok:()=>window.pdfjsLib}
+};
+const loading={};
+function loadScript(url){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');s.src=url;s.onload=res;s.onerror=()=>{s.remove();rej(new Error('load failed'))};
+    document.head.append(s);
+  });
+}
+function need(name){
+  const lib=LIBS[name];
+  if(lib.ok()) return Promise.resolve();
+  return loading[name]||(loading[name]=(async()=>{
+    for(let i=0;i<lib.urls.length;i++){
+      try{
+        await loadScript(lib.urls[i]);
+        if(lib.ok()){ if(name==='pdfjs') pdfjsLib.GlobalWorkerOptions.workerSrc=lib.workers[i]; return; }
+      }catch(e){}
+    }
+    delete loading[name];
+    throw new Error('Could not load the "'+name+'" reader. Browser mode needs internet the first time');
+  })());
+}
+
+async function toCanvas(src){
+  if(src instanceof HTMLCanvasElement) return src;
+  const bmp=await createImageBitmap(src);
+  const scale=bmp.width<1600?1600/bmp.width:(bmp.width>2400?2400/bmp.width:1);
+  const cv=document.createElement('canvas');cv.width=Math.round(bmp.width*scale);cv.height=Math.round(bmp.height*scale);
+  const ctx=cv.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,cv.width,cv.height);ctx.drawImage(bmp,0,0,cv.width,cv.height);
+  return cv;
+}
+let workerP=null, progCb=null;
+function getWorker(prog){
+  progCb=prog;
+  return workerP||(workerP=(async()=>{
+    const w=await Tesseract.createWorker('eng',1,{logger:m=>{if(progCb&&m.status==='recognizing text')progCb(Math.round(m.progress*100))}});
+    await w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});
+    return w;
+  })().catch(e=>{workerP=null;throw e}));
+}
+async function ocrGrid(src,prog){
+  await need('tesseract');
+  const cv=await toCanvas(src);
+  const worker=await getWorker(prog);
+  const {data}=await worker.recognize(cv);
+  const words=(data.words||[]).filter(w=>w.text&&w.text.trim()&&w.confidence>=25)
+    .map(w=>({text:w.text.trim(),x:w.bbox.x0,w:w.bbox.x1-w.bbox.x0,y:w.bbox.y0,h:w.bbox.y1-w.bbox.y0}));
+  return buildGrid(words);
+}
+async function pdfGrid(buf,prog){
+  await need('pdfjs');
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;
+  const words=[]; let off=0;
+  for(let p=1;p<=Math.min(pdf.numPages,300);p++){
+    const page=await pdf.getPage(p), vp=page.getViewport({scale:1}), tc=await page.getTextContent();
+    for(const it of tc.items){
+      const s=it.str||''; if(!s.trim())continue;
+      const h=it.height||Math.abs(it.transform[3])||10, cw=it.width/Math.max(s.length,1);
+      for(const m of s.matchAll(/\S+(?: \S+)*/g))
+        words.push({text:m[0],x:it.transform[4]+m.index*cw,w:m[0].length*cw,y:off+vp.height-it.transform[5]-h,h});
+    }
+    off+=vp.height+40;
+  }
+  if(words.length) return buildGrid(words);
+  const grids=[];
+  for(let p=1;p<=Math.min(pdf.numPages,10);p++){
+    const page=await pdf.getPage(p), vp=page.getViewport({scale:2});
+    const cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+    grids.push(...await ocrGrid(cv,prog));
+  }
+  return pad(grids);
+}
+async function docxGrid(buf){
+  await need('jszip');
+  const z=await JSZip.loadAsync(buf);
+  const xml=await z.file('word/document.xml').async('string');
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const textOf=node=>{
+    let t='';
+    const walk=n=>{for(const c of n.childNodes){
+      if(c.nodeType!==1)continue;
+      if(c.localName==='t'&&c.namespaceURI===NS)t+=c.textContent;
+      else if(c.localName==='tab'||c.localName==='br')t+=' ';
+      else walk(c);
+    }};
+    walk(node);return t.trim();
+  };
+  const body=doc.getElementsByTagNameNS(NS,'body')[0], rows=[];
+  for(const ch of body.children){
+    if(ch.localName==='p'){const t=textOf(ch);if(t)rows.push([t])}
+    else if(ch.localName==='tbl'){
+      for(const tr of ch.getElementsByTagNameNS(NS,'tr'))
+        rows.push([...tr.children].filter(c=>c.localName==='tc')
+          .map(tc=>[...tc.children].filter(p=>p.localName==='p').map(textOf).filter(Boolean).join(' ')));
+    }
+  }
+  return pad(rows);
+}
+async function xlsxGrid(buf){
+  await need('xlsx');
+  const wb=XLSX.read(buf,{type:'array',cellDates:true}), rows=[];
+  for(const name of wb.SheetNames){
+    const block=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:'',dateNF:'yyyy-mm-dd'})
+      .map(r=>r.map(String)).filter(r=>r.some(c=>c.trim())).slice(0,5000);
+    if(!block.length)continue;
+    if(wb.SheetNames.length>1)rows.push(['[Sheet: '+name+']']);
+    rows.push(...block);
+  }
+  return pad(rows);
+}
+async function extractAny(file,buf,prog){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  try{
+    if(IMG_EXT.includes(ext)||(file.type||'').startsWith('image/')) return {kind:'image',grid:await ocrGrid(file,prog),force:false,note:''};
+    if(ext==='pdf') return {kind:'pdf',grid:await pdfGrid(buf,prog),force:false,note:''};
+    if(ext==='docx') return {kind:'word',grid:await docxGrid(buf),force:false,note:''};
+    if(['xlsx','xlsm'].includes(ext)) return {kind:'excel',grid:await xlsxGrid(buf),force:true,note:''};
+    if(['csv','tsv'].includes(ext)) return {kind:'csv',grid:csvGrid(decodeText(buf)),force:true,note:''};
+    if(ext==='json'){const [g,h]=jsonGrid(decodeText(buf));return {kind:'json',grid:g,force:h,note:''}}
+    if(['txt','md','log','text'].includes(ext)) return {kind:'text',grid:textToGrid(decodeText(buf)),force:false,note:''};
+  }catch(e){
+    const note='Could not read the contents ('+e.message+'). The file itself is stored safely.';
+    return {kind:'file',grid:infoGrid(file,note),force:true,note};
+  }
+  return {kind:'file',grid:infoGrid(file,'Stored as-is. No readable table data in this file type.'),force:true,note:''};
+}
+
+async function sha1(buf){
+  try{
+    const d=await crypto.subtle.digest('SHA-1',buf);
+    return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    let h=2166136261;const u=new Uint8Array(buf);
+    for(let i=0;i<u.length;i++){h^=u[i];h=Math.imul(h,16777619)}
+    return 'f'+(h>>>0).toString(16)+'-'+u.length;
+  }
+}
+function safeSheetName(name,existing){
+  const stem=name.replace(/\.[^.]*$/,'').replace(/[\[\]:*?\/\\]/g,'').trim().slice(0,24)||'file';
+  let n=1,cand=stem;
+  while(existing.includes(cand)||cand==='Index'){n++;cand=stem.slice(0,24)+'_'+n}
+  return cand;
+}
+
+const idb=(()=>{
+  let dbp=null, mem=null;
+  const open=()=>dbp||(dbp=new Promise((res,rej)=>{
+    try{
+      const r=indexedDB.open('smart-data-entry',1);
+      r.onupgradeneeded=()=>r.result.createObjectStore('entries',{keyPath:'sheet'});
+      r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);
+    }catch(e){rej(e)}
+  }).catch(e=>{mem=new Map();return null}));
+  const run=async(mode,fn)=>{
+    const db=await open();
+    if(!db) return null;
+    return new Promise((res,rej)=>{
+      const t=db.transaction('entries',mode), r=fn(t.objectStore('entries'));
+      t.oncomplete=()=>res(r&&r.result!==undefined?r.result:undefined);
+      t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error);
+    });
+  };
+  return {
+    async all(){const r=await run('readonly',s=>s.getAll());return mem?[...mem.values()]:r},
+    async get(k){const r=await run('readonly',s=>s.get(k));return mem?mem.get(k):r},
+    async put(v){await run('readwrite',s=>s.put(v));if(mem)mem.set(v.sheet,v)},
+    async del(k){await run('readwrite',s=>s.delete(k));if(mem)mem.delete(k)}
+  };
+})();
+
+let queue=Promise.resolve();
+const L={
+  mode:'browser',
+  process(file,force,prog){
+    const job=queue.then(()=>L.processOne(file,force,prog));
+    queue=job.catch(()=>{});
+    return job;
+  },
+  async processOne(file,force,prog){
+    const buf=await file.arrayBuffer(), hash=await sha1(buf), all=await idb.all();
+    if(!force){const d=all.find(e=>e.hash===hash);if(d)return {duplicate:true,sheet:d.sheet,photo:d.photo}}
+    const x=await extractAny(file,buf,prog);
+    const empty=!x.grid.length;
+    const {headers,body}=splitHeader(empty?[['(no readable text found in this file)']]:x.grid,empty?false:x.force);
+    const id=Math.max(0,...all.map(e=>e.id))+1;
+    const sheet=safeSheetName(file.name,all.map(e=>e.sheet));
+    await idb.put({sheet,id,date:nowStr(),photo:file.name,kind:x.kind,hash,headers,rows:body,blob:file,size:file.size});
+    return {entry_id:id,sheet,headers,rows:body,photo:file.name,kind:x.kind,note:x.note,fields:detectFields(headers,body)};
+  },
+  async entries(){
+    const all=(await idb.all()).sort((a,b)=>a.id-b.id);
+    return {entries:all.map(e=>({id:e.id,date:e.date,photo:e.photo,sheet:e.sheet,rows:e.rows.length,cols:e.headers.length,type:e.kind}))};
+  },
+  async sheet(s){
+    const e=await idb.get(s); if(!e) throw new Error('Not found');
+    return {headers:e.headers,rows:e.rows,kind:e.kind,fields:detectFields(e.headers,e.rows)};
+  },
+  async save(s,d){
+    const e=await idb.get(s); if(!e) throw new Error('Not found');
+    e.headers=d.headers.map((h,i)=>String(h).trim()||'Column '+(i+1));
+    e.rows=d.rows.map(r=>r.map(String));
+    await idb.put(e);return {saved:e.rows.length};
+  },
+  async del(s){await idb.del(s)},
+  async search(q){
+    q=q.toLowerCase();const out=[];
+    for(const e of (await idb.all()).sort((a,b)=>a.id-b.id)){
+      e.rows.forEach((r,i)=>{if(out.length<300&&r.some(c=>String(c).toLowerCase().includes(q)))out.push({sheet:e.sheet,row:i+1,headers:e.headers,cells:r})});
+    }
+    return {results:out};
+  },
+  async stats(){
+    const all=(await idb.all()).sort((a,b)=>a.id-b.id);
+    const bytes=all.reduce((s,e)=>s+(e.size||0)+JSON.stringify(e.rows).length,0);
+    return {photos:all.length,rows:all.reduce((s,e)=>s+e.rows.length,0),last:all.length?all[all.length-1].date.slice(0,10):'-',size_kb:Math.round(bytes/102.4)/10};
+  },
+  async photo(s,kind){
+    if(kind!=='image')return null;
+    const e=await idb.get(s);return e&&e.blob?URL.createObjectURL(e.blob):null;
+  },
+  async download(kind,s){
+    if(kind==='xlsx'){
+      const all=(await idb.all()).sort((a,b)=>a.id-b.id);
+      if(!all.length)return toast('Nothing stored yet.');
+      await need('xlsx');
+      const wb=XLSX.utils.book_new(), used=['Index'];
+      const index=[['Entry ID','Entry Date','File','Sheet','Rows','Columns','Type'],
+        ...all.map(e=>[e.id,e.date,e.photo,e.sheet,e.rows.length,e.headers.length,e.kind])];
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(index),'Index');
+      for(const e of all){
+        const aoa=[e.headers,...e.rows.map(r=>r.map(c=>{const v=smartCast(c);return v===null?'':v}))];
+        const ws=XLSX.utils.aoa_to_sheet(aoa,{cellDates:true});
+        ws['!cols']=e.headers.map((h,j)=>({wch:Math.min(50,Math.max(10,String(h).length+3,...e.rows.map(r=>String(r[j]||'').length+3)))}));
+        let name=e.sheet.slice(0,31),n=1;
+        while(used.includes(name)){n++;name=e.sheet.slice(0,28)+'_'+n}
+        used.push(name);XLSX.utils.book_append_sheet(wb,ws,name);
+      }
+      XLSX.writeFile(wb,'entries.xlsx',{cellDates:true});return;
+    }
+    const e=await idb.get(s); if(!e)return toast('Not found');
+    if(kind==='orig') return saveBlob(e.blob,e.photo);
+    if(kind==='json'){
+      const data=e.rows.map(r=>Object.fromEntries(e.headers.map((h,i)=>[h,r[i]??''])));
+      return saveBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),s+'.json');
+    }
+    const q=v=>{v=String(v??'');return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    const csv=[e.headers,...e.rows].map(r=>r.map(q).join(',')).join('\r\n');
+    saveBlob(new Blob(['\ufeff'+csv],{type:'text/csv'}),s+'.csv');
+  }
+};
+
+let API='';
+const R={
+  mode:'server',
+  async process(file,force){
+    const fd=new FormData();fd.append('photo',file);if(force)fd.append('force','1');
+    const res=await fetch(API+'/api/process',{method:'POST',body:fd}), d=await res.json();
+    if(!res.ok)throw new Error(d.error||'Failed');
+    return d;
+  },
+  entries:()=>fetch(API+'/api/entries').then(r=>r.json()),
+  async sheet(s){const d=await (await fetch(API+'/api/entries/'+enc(s))).json();if(d.error)throw new Error(d.error);return d},
+  async save(s,data){
+    const r=await fetch(API+'/api/entries/'+enc(s),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    if(!r.ok)throw new Error('Save failed');return r.json();
+  },
+  async del(s){await fetch(API+'/api/entries/'+enc(s),{method:'DELETE'})},
+  search:q=>fetch(API+'/api/search?q='+enc(q)).then(r=>r.json()),
+  stats:()=>fetch(API+'/api/stats').then(r=>r.json()),
+  async photo(s){return API+'/api/photo/'+enc(s)},
+  async download(kind,s){
+    const url=kind==='xlsx'?API+'/api/download':kind==='orig'?API+'/api/file/'+enc(s)+'?dl=1':API+'/api/entries/'+enc(s)+'/export?fmt='+kind;
+    const a=document.createElement('a');a.href=url;a.download='';document.body.append(a);a.click();a.remove();
+  }
+};
+
+let B=L;
+const HOSTED=location.protocol!=='file:'&&!['localhost','127.0.0.1'].includes(location.hostname);
+
+async function probe(base){
+  const get=async path=>{
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),1500);
+    try{
+      const r=await fetch(base+path,{signal:c.signal,cache:'no-store'});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return await r.json();
+    }finally{clearTimeout(t)}
+  };
+  try{const j=await get('/api/health');if(j&&j.server)return j}catch(e){}
+  try{await get('/api/stats');return {server:true,old:true}}catch(e){}
+  throw new Error('no server');
+}
+async function findServer(){
+  const cands=[];if(location.protocol.startsWith('http'))cands.push('');
+  for(let p=5000;p<5030;p++)cands.push('http://127.0.0.1:'+p);
+  const res=(await Promise.allSettled(cands.map(async b=>[b,await probe(b)]))).filter(r=>r.status==='fulfilled').map(r=>r.value);
+  return res.find(([b,h])=>!h.old)||res[0]||null;
+}
+function notice(html){
+  const bar=$('#status');
+  if(!html){bar.hidden=true;return}
+  bar.innerHTML=html;bar.hidden=false;
+}
+function paintMode(){
+  const server=B===R;
+  const btn=$('#modeBtn');
+  btn.style.display=HOSTED?'none':'';
+  btn.textContent=server?'🟢 Python server':'🌐 Browser mode';
+  btn.title=server?'Files are saved to data/entries.xlsx on your computer. Click to switch to Browser mode.':'Everything runs inside this page. Click to look for the Python server.';
+}
+async function chooseMode(allowServer=true){
+  notice('');
+  if(HOSTED){B=L;paintMode();try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}return false}
+  if(allowServer){
+    const found=await findServer();
+    if(found){
+      const [base,h]=found;
+      if(h.old){
+        notice('An OLD copy of the server is running, so Browser mode is used instead. To use Python again: run <b>taskkill /F /IM python.exe</b> and then <b>python app.py</b>.');
+      }else if(h.ocr&&!h.ocr.ok){
+        notice('The Python text reader is not installed, so Browser mode is used. To use Python: run <b>pip install rapidocr-onnxruntime</b>.');
+      }else{
+        API=base;B=R;paintMode();return true;
+      }
+    }
+  }
+  B=L;paintMode();return false;
+}
+async function switchMode(){
+  if(B===R){
+    prefs.set('mode','browser');await chooseMode(false);toast('Browser mode: files are saved in this browser.');
+  }else{
+    prefs.set('mode','auto');
+    const ok=await chooseMode(true);
+    toast(ok?'Connected to the Python server.':'Python server not found — staying in Browser mode.');
+  }
+  $('#view').innerHTML='';
+  if($('#data').classList.contains('active'))refreshData();
+}
+$('#modeBtn').onclick=switchMode;
+setInterval(async()=>{
+  if(B!==R)return;
+  try{await probe(API)}catch(e){B=L;paintMode();toast('Python server stopped — switched to Browser mode.')}
+},5000);
+
+function roTable(headers,rows){
+  const t=el('table'),hr=t.createTHead().insertRow();
+  headers.forEach(h=>hr.append(el('th',{},h)));
+  const tb=t.createTBody();
+  rows.forEach(r=>{const tr=tb.insertRow();headers.forEach((_,i)=>tr.insertCell().textContent=r[i]??'')});
+  return t;
+}
+function chips(f){
+  if(!f)return null;
+  const box=el('div',{class:'chips'});
+  box.append(el('span',{class:'chip'},el('i',{},'Type'),f.type));
+  (f.emails||[]).forEach(v=>box.append(el('span',{class:'chip'},el('i',{},'✉'),v)));
+  (f.phones||[]).forEach(v=>box.append(el('span',{class:'chip'},el('i',{},'☎'),v)));
+  (f.dates||[]).forEach(v=>box.append(el('span',{class:'chip'},el('i',{},'📅'),v)));
+  if(f.numbers)box.append(el('span',{class:'chip'},el('i',{},'Σ'),`${f.numbers.count} numbers · sum ${f.numbers.sum.toLocaleString()} · min ${f.numbers.min} · max ${f.numbers.max}`));
+  return box;
+}
+function zoom(src){const lb=$('#lightbox');lb.querySelector('img').src=src;lb.style.display='flex'}
+$('#lightbox').onclick=()=>$('#lightbox').style.display='none';
+
+$$('.tab').forEach(b=>b.onclick=()=>{
+  $$('.tab').forEach(x=>x.classList.toggle('active',x===b));
+  $$('.panel').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab));
+  if(b.dataset.tab==='data')refreshData();
+});
+
+if(matchMedia('(pointer:coarse)').matches){$('#drop strong').textContent='Tap to choose any file(s)'}
+const ready=(async()=>{await chooseMode(prefs.get('mode')!=='browser')})();
+
+async function run(file,card,force){
+  await ready;
+  const status=card.querySelector('.st');
+  status.className='st muted';status.innerHTML='<span class="spin"></span>Reading…';
+  card.querySelectorAll('.extra').forEach(x=>x.remove());
+  try{
+    const d=await B.process(file,force,pct=>{status.innerHTML='<span class="spin"></span>Reading… '+pct+'%'});
+    if(d.duplicate){
+      status.className='st warn';status.textContent=`⚠ Already stored as sheet “${d.sheet}”`;
+      card.append(el('div',{class:'extra gap',style:'margin-top:10px'},
+        el('button',{class:'small',onclick:()=>run(file,card,true)},'Store anyway'),
+        el('button',{class:'small',onclick:()=>{$$('.tab')[1].click();setTimeout(()=>openSheet(d.sheet),400)}},'Open existing')));
+      return;
+    }
+    status.className='st ok';status.textContent=`✔ Stored in sheet “${d.sheet}” (${d.rows.length} rows)`;
+    if(d.note)card.append(el('div',{class:'extra warn',style:'margin-top:8px'},'⚠ '+d.note));
+    const ex=el('div',{class:'extra'});ex.append(chips(d.fields)||'');
+    ex.append(el('div',{class:'wrap'},roTable(d.headers,d.rows)));
+    ex.append(el('div',{class:'gap',style:'margin-top:10px'},
+      el('button',{class:'small',onclick:()=>{$$('.tab')[1].click();setTimeout(()=>openSheet(d.sheet),400)}},'✏ Edit / view in Stored data')));
+    card.append(ex);
+  }catch(e){
+    status.className='st bad';
+    status.textContent=(e instanceof TypeError&&B===R)?'✖ Cannot reach the Python server — click the mode button to use Browser mode.':'✖ '+e.message;
+  }
+}
+function handle(files){
+  [...files].forEach(f=>{
+    const url=URL.createObjectURL(f),isImg=(f.type||'').startsWith('image/');
+    const card=el('div',{class:'card'},
+      el('div',{class:'row'},
+        el('div',{class:'gap'},
+          isImg?el('img',{class:'thumb',src:url,onclick:()=>zoom(url)}):el('span',{class:'ficon'},ICONS[kindOf(f.name)]),
+          el('b',{},f.name)),
+        el('span',{class:'st muted'})));
+    $('#results').prepend(card);run(f,card,false);
+  });
+}
+$('#file').onchange=e=>{handle(e.target.files);e.target.value=''};
+$('#cam').onchange=e=>{handle(e.target.files);e.target.value=''};
+$('#camBtn').onclick=()=>$('#cam').click();
+const drop=$('#drop');
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>handle(e.dataTransfer.files));
+document.addEventListener('paste',e=>handle([...(e.clipboardData?.files||[])]));
+$('#dl').onclick=async()=>{await ready;try{await B.download('xlsx')}catch(e){toast(e.message)}};
+
+async function refreshData(){await ready;await Promise.all([loadStats(),loadList()])}
+async function loadStats(){
+  const s=await B.stats(),box=$('#stats');box.innerHTML='';
+  [['Files stored',s.photos],['Total rows',s.rows],['Last upload',s.last],['Size',s.size_kb+' KB']]
+    .forEach(([k,v])=>box.append(el('div',{class:'stat'},el('b',{},String(v)),el('span',{class:'muted'},k))));
+}
+async function loadList(){
+  const q=$('#q').value.trim(),box=$('#list');box.innerHTML='';
+  if(q){
+    const {results}=await B.search(q);
+    if(!results.length){box.append(el('p',{class:'muted',style:'padding:16px'},'No matches.'));return}
+    const t=roTable(['Sheet','Row','Matching row',''],[]),tb=t.tBodies[0];
+    results.forEach(r=>{
+      const tr=tb.insertRow();tr.insertCell().textContent=r.sheet;tr.insertCell().textContent=r.row;
+      tr.insertCell().textContent=r.cells.join('  |  ');
+      tr.insertCell().append(el('button',{class:'small',onclick:()=>openSheet(r.sheet)},'Open'));
+    });
+    box.append(t);return;
+  }
+  const {entries}=await B.entries();
+  if(!entries.length){box.append(el('p',{class:'muted',style:'padding:16px'},'Nothing stored yet.'));return}
+  const t=roTable(['#','Date','File','Type','Sheet','Rows','Cols',''],[]),tb=t.tBodies[0];
+  entries.forEach(e=>{
+    const tr=tb.insertRow(),kind=e.type||kindOf(e.photo);
+    [e.id,e.date,e.photo,(ICONS[kind]||'🗂')+' '+kind,e.sheet,e.rows,e.cols].forEach(v=>tr.insertCell().textContent=v);
+    tr.insertCell().append(
+      el('button',{class:'small',onclick:()=>openSheet(e.sheet)},'Open'),' ',
+      el('button',{class:'small danger',onclick:async()=>{
+        if(!confirm('Delete '+e.sheet+'?'))return;
+        await B.del(e.sheet);$('#view').innerHTML='';refreshData();}},'🗑'));
+  });
+  box.append(t);
+}
+let qt;$('#q').oninput=()=>{clearTimeout(qt);qt=setTimeout(loadList,300)};
+
+async function openSheet(sheet){
+  await ready;
+  let d;
+  try{d=await B.sheet(sheet)}catch(e){return toast(e.message)}
+  const cur={headers:[...d.headers],rows:d.rows.map(r=>r.map(String))};
+  const v=$('#view');v.innerHTML='';
+  const card=el('div',{class:'card'});v.append(card);
+  const photoUrl=await B.photo(sheet,d.kind);
+  const img=photoUrl?el('img',{class:'thumb',src:photoUrl,onclick:()=>zoom(photoUrl)}):null;
+  if(img)img.onerror=()=>img.remove();
+  const act=fn=>async()=>{try{await fn()}catch(e){toast(e.message)}};
+  card.append(el('div',{class:'row'},
+    el('div',{class:'gap'},img,el('b',{style:'font-size:17px'},'Sheet: '+sheet)),
+    el('div',{class:'gap'},
+      el('button',{class:'small',onclick:()=>{cur.rows.push(cur.headers.map(()=>''));draw()}},'+ Row'),
+      el('button',{class:'small',onclick:()=>{cur.headers.push('Column '+(cur.headers.length+1));cur.rows.forEach(r=>r.push(''));draw()}},'+ Column'),
+      el('button',{class:'small',onclick:act(async()=>{
+        const tsv=[cur.headers,...cur.rows].map(r=>r.join('\t')).join('\n');
+        await navigator.clipboard.writeText(tsv);toast('Copied — paste straight into Excel');})},'📋 Copy'),
+      el('button',{class:'small',onclick:act(()=>B.download('orig',sheet))},'📎 Original file'),
+      el('button',{class:'small',onclick:act(()=>B.download('csv',sheet))},'CSV'),
+      el('button',{class:'small',onclick:act(()=>B.download('json',sheet))},'JSON'),
+      el('button',{class:'small primary',onclick:act(async()=>{
+        await B.save(sheet,cur);toast('✅ Changes saved');refreshData();})},'💾 Save changes'))));
+  card.append(chips(d.fields)||'');
+  const holder=el('div',{class:'wrap edit'});card.append(holder);
+  card.append(el('p',{class:'muted'},'Click any cell (or header) to correct it, then press “Save changes”.'));
+  function draw(){
+    holder.innerHTML='';const t=el('table'),hr=t.createTHead().insertRow();
+    cur.headers.forEach((h,i)=>hr.append(el('th',{},el('input',{value:h,oninput:e=>cur.headers[i]=e.target.value}))));
+    hr.append(el('th',{}));
+    const tb=t.createTBody();
+    cur.rows.forEach((r,ri)=>{
+      const tr=tb.insertRow();
+      cur.headers.forEach((_,ci)=>tr.insertCell().append(el('input',{value:r[ci]??'',oninput:e=>r[ci]=e.target.value})));
+      tr.insertCell().append(el('button',{class:'small danger',title:'Delete row',onclick:()=>{cur.rows.splice(ri,1);draw()}},'✕'));
+    });
+    holder.append(t);
+  }
+  draw();card.scrollIntoView({behavior:'smooth'});
+}
+
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+let installEvent=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;$('#installBtn').style.display='inline-block'});
+addEventListener('appinstalled',()=>{installEvent=null;$('#installBtn').style.display='none';toast('App installed')});
+$('#installBtn').onclick=async()=>{
+  if(!installEvent)return;
+  installEvent.prompt();await installEvent.userChoice;installEvent=null;$('#installBtn').style.display='none';
+};
+(function(){
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(ios&&!standalone&&!prefs.get('iosHintClosed')){
+    $('#iosHint').style.display='block';
+    $('#iosClose').onclick=()=>{$('#iosHint').style.display='none';prefs.set('iosHintClosed','1')};
+  }
+})();
+(function(){
+  const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W,H,nodes=[],pulses=[],mouse={
+    x:-999,y:-999};
+  const COLORS=['255,255,255','120,200,255','190,150,255','90,255,220'];
+  function init(){
+    W=cv.width=innerWidth;H=cv.height=innerHeight;
+    const n=Math.min(170,Math.floor(W*H/9500));
+    nodes=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.35,vy:(Math.random()-.5)*.35,
+      r:Math.random()*1.6+.6,ph:Math.random()*6.28,c:COLORS[Math.random()*COLORS.length|0]}));
+  }
+  const LINK=150;
+  function frame(t){
+    ctx.clearRect(0,0,W,H);
+    for(let i=0;i<nodes.length;i++){
+      const a=nodes[i];
+      for(let j=i+1;j<nodes.length;j++){
+        const b=nodes[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+        if(d<LINK){ctx.strokeStyle=`rgba(110,170,255,${(1-d/LINK)*.35})`;ctx.lineWidth=.7;
+          ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+          if(!still&&Math.random()<.0006&&pulses.length<14)pulses.push({a,b,p:0});}
+      }
+      const md=Math.hypot(a.x-mouse.x,a.y-mouse.y);
+      if(md<190){ctx.strokeStyle=`rgba(90,255,220,${(1-md/190)*.6})`;ctx.lineWidth=.9;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(mouse.x,mouse.y);ctx.stroke();}
+    }
+    for(const n of nodes){
+      const tw=still?1:.55+.45*Math.sin(t/700+n.ph);
+      const g=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*5);
+      g.addColorStop(0,`rgba(${n.c},${.9*tw})`);g.addColorStop(1,`rgba(${n.c},0)`);
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(n.x,n.y,n.r*5,0,6.28);ctx.fill();
+      ctx.fillStyle=`rgba(${n.c},${tw})`;ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,6.28);ctx.fill();
+      if(!still){n.x+=n.vx;n.y+=n.vy;
+        if(n.x<-20)n.x=W+20;if(n.x>W+20)n.x=-20;if(n.y<-20)n.y=H+20;if(n.y>H+20)n.y=-20;}
+    }
+    pulses=pulses.filter(s=>s.p<1);
+    for(const s of pulses){
+      s.p+=.025;
+      const x=s.a.x+(s.b.x-s.a.x)*s.p,y=s.a.y+(s.b.y-s.a.y)*s.p;
+      const g=ctx.createRadialGradient(x,y,0,x,y,12);
+      g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.4,'rgba(90,255,220,.5)');g.addColorStop(1,'rgba(90,255,220,0)');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,12,0,6.28);ctx.fill();
+    }
+    if(!still)requestAnimationFrame(frame);
+  }
+  addEventListener('resize',init);
+  addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+  init();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
